@@ -1,4 +1,5 @@
 from sympy import *
+init_printing(use_unicode=True)
 
 # material constants
 K_p, K_phi, dK_p = symbols('K_p K_phi dK_p')
