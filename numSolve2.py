@@ -114,11 +114,24 @@ def getInternalStress(p):
 H = 0.08
 B = 0.4
 
-# materal constants
-GSType = 'PE'
-if GSType == 'PE': E = 23529.16665
+# Young's modulus
+GSType = '4PP'
+if GSType == 'PE': E = 2.22e4
+if GSType == '0.5PP': E = 3.86e4
+if GSType == 'PP': E = 6.29e4
+if GSType == '2PP': E = 10.27e4
+if GSType == '3PP': E = 13.67e4
+if GSType == '4PP': E = 16.75e4
+
+# Poisson's ratio
 v = 0.33
-J = 53*1e3
+
+# Tensile stiffness:
+if GSType == 'PE': J = 53*1e3
+if GSType[-2:] == 'PP':
+	J = 232*1e3
+	if len(GSType) != 2:
+		J *= float(GSType[:-2])
 
 # state parameter
 M = 1.35
@@ -146,8 +159,18 @@ b_2 = 0.2354
 s_rf = 0.
 
 # min and max external vertical load
-s_afMin =   4.212e3
-s_afMax = 476.694e3
+if GSType == 'PE': 
+	s_afMin = 4.21e3; s_afMax =  476.69e3
+if GSType == '0.5PP': 
+	s_afMin = 4.22e3; s_afMax =  721.04e3
+if GSType == 'PP': 
+	s_afMin = 4.22e3; s_afMax = 1414.32e3
+if GSType == '2PP':
+	s_afMin = 4.22e3; s_afMax = 2732.59e3
+if GSType == '3PP':
+	s_afMin = 4.22e3; s_afMax = 3937.70e3
+if GSType == '4PP':
+	s_afMin = 4.22e3; s_afMax = 5408.80e3
 
 # initial state variables
 e_q = 0; dp = 0
@@ -192,7 +215,7 @@ for i in range(int(num)):
 ##  Write data to file  ##
 ##########################
 
-fout = file('analSolve'+GSType+'1.dat','w')
+fout = file('analSolve'+GSType+'.dat','w')
 for i in range(len(data['s_a'])):
 	fout.write('%15.3f'%data['s_a'][i]+'%15.3f'%data['s_r'][i]+'%15.3f'%data['s_af'][i] \
 	           +'%9.3f'%data['e_a'][i] +'%9.3f'%data['e_r'][i]+ '%9.3f'%data['e_T'][i]+'\n')
