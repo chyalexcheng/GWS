@@ -178,7 +178,7 @@ for i in range(int(num)):
 	dp = opt.fsolve(analSolution,dp,args=(p,e_q,e_Pla_a,e_Pla_r))
 	e_a, e_r, e_Pla_a, e_Pla_r, e_q, e_T = getStrains(dp, p, e_q, e_Pla_a, e_Pla_r)
 	p += dp
-	if i ==0 or i%1000 == 0:
+	if i == num or i%1000 == 0:
 		s_a,s_r = getInternalStress(p)
 		data['s_a'].append(s_a); data['s_r'].append(s_r); data['s_af'].append(s_af) 
 		data['e_a'].append(e_a); data['e_r'].append(e_r); data['e_T'].append(e_T) 
@@ -187,12 +187,8 @@ for i in range(int(num)):
 ##  Write data to file  ##
 ##########################
 
-##########################
-##  Write data to file  ##
-##########################
-
 fout = file('analSolve'+GSType+'.dat','w')
 for i in range(len(data['s_a'])):
-	fout.write('%15.3f'%data['s_a'][i]+'%15.3f'%data['s_a'][i]+'%15.3f'%data['s_af'][i] \
+	fout.write('%15.3f'%data['s_a'][i]+'%15.3f'%data['s_r'][i]+'%15.3f'%data['s_af'][i] \
 	           +'%9.3f'%data['e_a'][i] +'%9.3f'%data['e_r'][i]+ '%9.3f'%data['e_T'][i]+'\n')
 fout.close()
