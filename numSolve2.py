@@ -16,7 +16,7 @@ def stressRatio(p, e_q, M, p_c, n, a_1, a_2, a_3):
 	etaDiff = a_1/(e_q+a_2)+a_3
 	eta = M_f+etaDiff
 	return etaDiff, eta
-	
+
 def dilationRatio(p, e_q, M, p_c, n, a_1, a_2, a_3, b_1, b_2):
 	"""Linear relationship between stress ratio difference and dilation ratio difference
 	"""
@@ -25,16 +25,14 @@ def dilationRatio(p, e_q, M, p_c, n, a_1, a_2, a_3, b_1, b_2):
 	K_mu = -(M-M_f)+b_1*etaDiff+b_2
 	return K_mu
 
-def plaStrainIncrements(dp, p, e_q, M, p_c, n, a_1, a_2, a_3, b_1, b_2, E, v):
+def plaStrainIncrements(dp, p, dEta, e_q, M, p_c, n, a_1, a_2, a_3, b_1, b_2, E, v):
    """axial plastic strain increment
    """
-   # ratio of mean to deviatoric stress increment
-   etaDiff, eta = stressRatio(p, e_q, M, p_c, n, a_1, a_2, a_3)
    # ratio of plastic volumetric to deviator strain increment
-   K_mu = dilationRatio(p, e_q, M, p_c, n, a_1, a_2, a_3, b_1, b_2)
+   K_mu = dilationRatio(p+dp, e_q, M, p_c, n, a_1, a_2, a_3, b_1, b_2)
    
    # ratio of axial to radial stress increment
-   dK_p  = (2.*eta+3.)/(3.-eta)
+   dK_p  = (2.*dEta+3.)/(3.-dEta)
    # ratio of radial strain to axial strain increment
    K_phi = (2.*-K_mu-3)/(2.*-K_mu+6.)
    
@@ -48,29 +46,26 @@ def plaStrainIncrements(dp, p, e_q, M, p_c, n, a_1, a_2, a_3, b_1, b_2, E, v):
    return de_a, de_r
 
 def plaStrains(dp, p, e_Pla_a, e_Pla_r, e_q, M, p_c, n, a_1, a_2, a_3, b_1, b_2, E, v):
-   de_a, de_r = plaStrainIncrements(dp, p, e_q, M, p_c, n, a_1, a_2, a_3, b_1, b_2, E, v)
+   de_a, de_r = plaStrainIncrements(dp, p, dEta, e_q, M, p_c, n, a_1, a_2, a_3, b_1, b_2, E, v)
    e_Pla_a = de_a + e_Pla_a
    e_Pla_r = de_r + e_Pla_r
    return e_Pla_a, e_Pla_r
    
-def elaStrains(dp, p, C_t, p_a, p_0, m):
+def elaStrains(p, C_t, p_a, p_0, m):
    """This is the function which returns axial and radial elastic strain
    """
-   p = dp +p
    e_v = C_t*((p/p_a)**m-(p_0/p_a)**m)
    return 1./3.*e_v, 1./3.*e_v
    
-def analSolution(dp, p, e_q, e_Pla_a, e_Pla_r):
+def analSolution(dp, p, dEta, e_q, e_Pla_a, e_Pla_r):
    """This function returns 0 when the equation of analytical solution is satisfied
    """
-   # ratio of mean to deviatoric stress increment
-   etaDiff, eta = stressRatio(p, e_q, M, p_c, n, a_1, a_2, a_3)
    # vertical principal stress
-   s_a = (p+dp)*(2.*eta+3.)/3.
+   s_a = (p+dp)*(2.*dEta+3.)/3.
    # horizontal principal stress
-   s_r = (p+dp)*(-eta+3.)/3.
+   s_r = (p+dp)*(  -dEta+3.)/3.
    # axial and radial elastic strain
-   e_Ela_a, e_Ela_r = elaStrains(dp, p, C_t, p_a, p_0, m)
+   e_Ela_a, e_Ela_r = elaStrains(p+dp, C_t, p_a, p_0, m)
    # axial and radial elastic strain
    e_Pla_a, e_Pla_r = plaStrains(dp, p, e_Pla_a, e_Pla_r, e_q, M, p_c, n, a_1, a_2, a_3, b_1, b_2, E, v)
    # total strain
@@ -85,7 +80,7 @@ def getStrains(dp, p, e_q, e_Pla_a, e_Pla_r):
       as well as tension strain of the wrapping membrane
    """
    # axial and radial elastic strain
-   e_Ela_a, e_Ela_r = elaStrains(dp, p, C_t, p_a, p_0, m)
+   e_Ela_a, e_Ela_r = elaStrains(p+dp, C_t, p_a, p_0, m)
    # axial and radial plastic strain
    e_Pla_a, e_Pla_r = plaStrains(dp, p, e_Pla_a, e_Pla_r, e_q, M, p_c, n, a_1, a_2, a_3, b_1, b_2, E, v)
    e_q = 2./3.*(e_Pla_a-e_Pla_r)
@@ -93,8 +88,8 @@ def getStrains(dp, p, e_q, e_Pla_a, e_Pla_r):
    e_a = e_Ela_a+e_Pla_a
    e_r = e_Ela_r+e_Pla_r
    # membrane tension strain
-   etaDiff, eta = stressRatio(p, e_q, M, p_c, n, a_1, a_2, a_3)
-   s_r = p*(-eta+3.)/3.
+   etaDiff, eta = stressRatio(p+dp, e_q, M, p_c, n, a_1, a_2, a_3)
+   s_r = (p+dp)*(-eta+3.)/3.
    rhs = (s_r-s_rf)*B*H*(1.-0.01*e_a)*(1.-0.01*e_r)
    lhs = J*(2.*B+2.*H)
    e_T = 100*rhs/lhs
@@ -147,9 +142,6 @@ b_2 = 0.2354
 ##  initial and boundary conditions  ##
 #######################################
 
-# initial mean stress
-p_0 = 2.6e3
-
 # external lateral confining stress
 s_rf = 0.
 
@@ -158,8 +150,14 @@ s_afMin =   4.212e3
 s_afMax = 476.694e3
 
 # initial state variables
-e_q = 0; p = p_0; dp = 0
+e_q = 0; dp = 0
 e_Pla_a = 0; e_Pla_r = 0
+
+# initial mean and deviatoric stresses
+p_0 = 2.6e3
+etaDiff, dEta = stressRatio(p_0, e_q, M, p_c, n, a_1, a_2, a_3)
+q_0 = p_0*dEta
+p = p_0
 
 #############################
 ##  Numerical integration  ##
@@ -174,11 +172,18 @@ data['e_a'] = []; data['e_r'] = []; data['e_T'] = []
 num = 1e5
 dS_af = (s_afMax-s_afMin)/num
 for i in range(int(num)):
-	s_af = s_afMin + dS_af*(i+1)
-	dp = opt.fsolve(analSolution,dp,args=(p,e_q,e_Pla_a,e_Pla_r))
+	# solve increments
+	s_af = s_afMin + dS_af*(i)
+	dp = opt.fsolve(analSolution,dp,args=(p, dEta, e_q, e_Pla_a, e_Pla_r))
 	e_a, e_r, e_Pla_a, e_Pla_r, e_q, e_T = getStrains(dp, p, e_q, e_Pla_a, e_Pla_r)
 	p += dp
-	if i == num or i%1000 == 0:
+	# ratio of total mean stress to deviatoric stress
+	etaDiff, eta = stressRatio(p, e_q, M, p_c, n, a_1, a_2, a_3)
+	dq = p*eta-q_0
+	dEta = dq/dp
+	q_0 = p*eta
+	# output data
+	if i == num-1 or i%1000 == 0:
 		s_a,s_r = getInternalStress(p)
 		data['s_a'].append(s_a); data['s_r'].append(s_r); data['s_af'].append(s_af) 
 		data['e_a'].append(e_a); data['e_r'].append(e_r); data['e_T'].append(e_T) 
@@ -187,7 +192,7 @@ for i in range(int(num)):
 ##  Write data to file  ##
 ##########################
 
-fout = file('analSolve'+GSType+'.dat','w')
+fout = file('analSolve'+GSType+'1.dat','w')
 for i in range(len(data['s_a'])):
 	fout.write('%15.3f'%data['s_a'][i]+'%15.3f'%data['s_r'][i]+'%15.3f'%data['s_af'][i] \
 	           +'%9.3f'%data['e_a'][i] +'%9.3f'%data['e_r'][i]+ '%9.3f'%data['e_T'][i]+'\n')
